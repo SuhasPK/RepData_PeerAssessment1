@@ -1,0 +1,126 @@
+---
+title: 'Reproducible Research: Peer Assignment 1'
+author: "Suhas P K"
+date: "2023-05-04"
+output:   
+    html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+- Large amount of data about personal movement can be collected from activity monitoring devices such as 'Fitbits', 'Jawbone Up' etc.
+- A group of enthusiasts took measurements about themselves regularly to improve their health, to find patterns on their behaviour, or because they are tech geek.
+- The obtained data [activity monitor data]('https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip') is raw data, proper tools are required to clean the data in a more understandable format.
+
+## About data:
+- The data can be downloaded from here -> [activity monitor data]('https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip').
+
+- The variables included in the data are:
+* **steps**: Number of steps taking on a 5-minute interval (missing values are coded as NA)
+* **date** : The date on which the measurement was taken in YYYY-MM-DD format.
+* **interval** : Identifier for the 5-minute interval  in which measurement was take.
+
+### The code for this assignment is given with as minimal texts to answer and understand the code.
+
+## Lets load the data
+```{r}
+activity <- read.csv("activity.csv")
+head(activity)
+```
+## What is mean total number of steps taken per day?
+```{r}
+# What is mean total mean number of steps taken per day?
+stepsPerDay <- aggregate(steps ~ date, activity, sum)
+# mean and median of step count per day.
+mean_StepsPerDay <- round(mean(stepsPerDay$steps),digits = 3)
+median_StepsPerDay <- round(median(stepsPerDay$steps), digits = 3)
+
+# plotting
+hist(stepsPerDay$steps, main = "Steps per day", xlab = "Step count", col = "green", breaks = 8)
+abline(v = mean_StepsPerDay,col = "red", lty ="dashed" ,lwd = 5 )
+text(x = mean_StepsPerDay*1.7, y = 15 , 
+     paste("Mean =", mean_StepsPerDay," steps"), col ="red", cex = 1 )
+abline(v=median_StepsPerDay, col="black",lwd=2)
+text(x = median_StepsPerDay*1.7, y = 13,
+     paste("Median =", median_StepsPerDay, " steps"), col = "black", cex=1)
+```
+
+## What is the average daily activity pattern?
+```{r}
+# What is the average daily activity pattern?
+average_interval <- aggregate(steps~interval, activity, mean, na.rm = TRUE)
+# plotting
+plot(x = average_interval$interval, y =average_interval$steps,
+     type = "l", xlab = "5 minutes interval", ylab = " Avergae step count",
+     main = "Average Daily Activity Pattern", col = "blue")
+max_step_interval <- average_interval$interval[which.max(average_interval$steps)]
+abline(v= max_step_interval, col = "red", lwd = 1.5)
+text(x = 1650, y =200,
+     paste("5-minute interval having max average step count = ",max_step_interval),col="red",cex=0.75)
+
+```
+
+## Imputing missing value
+
+- Note that there are a number of days/intervals where there are missing value (coded as NA). The presence of missing days may introduce bias into some caluculations or summaries of the data. 
+
+```{r}
+# Imputing the missing values
+# Calculate and report the total number of missing values in the dataset.
+missing_values <- sum(!complete.cases(activity)==TRUE)
+
+# Replace NA values by 0 for the 5min interval.
+activity[is.na(activity$steps),"steps"] <- mean(activity$steps,na.rm = TRUE)
+
+stepsPerDay_noNA <- aggregate(steps ~ date, activity, sum)
+# mean and median of step count per day.
+mean_StepsPerDay_noNA <- round(mean(stepsPerDay_noNA$steps),digits = 3)
+median_StepsPerDay_noNA <- round(median(stepsPerDay_noNA$steps), digits = 3)
+
+# plotting
+
+hist(stepsPerDay_noNA$steps, main = "Steps per day (NA values are filled by mean(activity steps without NA)  )", xlab = "Step count", col = "green", breaks = 8)
+abline(v = mean_StepsPerDay_noNA,col = "red", lty ="dashed" ,lwd = 5 )
+text(x = mean_StepsPerDay_noNA*1.7, y = 15 , 
+     paste("Mean =", mean_StepsPerDay_noNA," steps"), col ="red", cex = 0.75 )
+abline(v=median_StepsPerDay_noNA, col="black",lwd=0.85)
+text(x = median_StepsPerDay_noNA*1.7, y = 13,
+     paste("Median =", median_StepsPerDay_noNA, " steps"), col = "black", cex=0.75)
+```
+
+## Are there difference in activvity patterns between weekdays and weekends?
+
+```{r}
+# Are there difference in activity patterns between weekdays and weekends?
+activity$day <- as.POSIXlt(activity$date)$wday
+activity$dayType <- as.factor(
+    ifelse(activity$date == 0 | activity$day == 6, "weekend", "weekday")
+)
+activity <- subset(activity, select = -c(day))
+head(activity)
+```
+```{r,fig.width=10, fig.height=8,fig.fullwidth=FALSE}
+# to get weekday and weekend from the data.
+weekday_data <- activity[activity$dayType =="weekday",]
+weekend_data <- activity[activity$dayType == "weekend",]
+
+weekday_stepInterval <- aggregate(steps~interval, weekday_data,mean)
+weekend_stepInterval <- aggregate(steps~interval, weekend_data,mean)
+
+# plotting
+par(mfrow = c(2,1))
+plot(weekday_stepInterval, type='l', col='green', main="Weekdays")
+plot(weekend_stepInterval,type='l', col="red", main="Weekends")
+
+```
+
+
+
+
+
+
+
